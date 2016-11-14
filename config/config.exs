@@ -28,3 +28,11 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
+config :logger, :console,
+  format: "$message\n",
+  level: :info,
+  metadata: [:request_id]
+
+config :bunyan,
+  env_vars: [{"CUSTOM_ENV_VAR", "our_env_var"}],
+  header_prefix: "x-some-prefix-"
