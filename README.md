@@ -1,6 +1,14 @@
 # Bunyan
 
-**TODO: Add description**
+A JSON logger for Elixir.
+
+![Paul Bunyan the Logger, by Owlsmcgee https://commons.wikimedia.org/wiki/File:Paul_Bunyan_statue_in_Bangor,_Maine.JPG](/paul_bunyan.png?raw=true)
+
+Bunyan provides a [Plug](https://github.com/elixir-lang/plug) that wraps the
+[standard Elixir Logger](http://elixir-lang.org/docs/stable/logger/Logger.html)
+and automatically generates JSON log messages.
+
+View documentation for Bunyan and Bunyan.Plug modules from iex.
 
 ## Installation
 
