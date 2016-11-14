@@ -22,3 +22,9 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     end
     ```
 
+## Contributing
+Before submitting your pull request, please run:
+  * `mix test`
+  * `mix credo --strict`
+  * `mix dialyzer`
+  * `mix coveralls`
