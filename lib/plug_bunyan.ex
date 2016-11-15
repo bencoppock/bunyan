@@ -9,6 +9,17 @@ defmodule Plug.Bunyan do
   In the context of a Phoenix app, the generated log message will include
   controller, action, and format (e.g. HTML or JSON).
 
+  To avoid logging sensitive information that's passed in via params, configure
+  which parameters should be filtered, like so:
+
+  ```
+  config :bunyan,
+    filter_keys: ["password", "ssn"]
+  ```
+
+  Parameter filtering is case insensitive and will replace filtered values with
+  the string `"[FILTERED]"`.
+
   To log environment variables, add configuration by providing a list of tuples
   which specify environment variables to log along with the desired output names.
 
@@ -34,8 +45,8 @@ defmodule Plug.Bunyan do
   (case insensitive). Therefore, `"x-some-prefix-custom-header=17"` would be
   logged as `{"custom_header": "17"}`
 
-  This plug expects an x-request-id response header to be present. That
-  can be achieved with Plug.RequestId.
+  If used in conjunction with (and after) Plug.RequestId, this plug will log the
+  x-request-id header as "request_id".
   """
 
   alias Plug.Conn
@@ -46,6 +57,8 @@ defmodule Plug.Bunyan do
 
   @header_prefix Application.get_env(:bunyan, :header_prefix, "")
   @env_vars      Application.get_env(:bunyan, :env_vars, [])
+  @filter_keys   Application.get_env(:bunyan, :filter_keys, [])
+  @key_filter    ~r/\A(#{Enum.intersperse(@filter_keys, "|")})\z/i
 
   def init(_), do: false
 
@@ -70,7 +83,7 @@ defmodule Plug.Bunyan do
         "method"      => conn.method,
         "timestamp"   => stop |> format_timestamp |> List.to_string,
         "path"        => conn.request_path,
-        "params"      => conn.params,
+        "params"      => conn.params |> filter,
         "status"      => conn.status |> Integer.to_string,
         "duration"    => duration |> format_duration |> List.to_string,
         "request_id"  => Logger.metadata[:request_id],
@@ -80,6 +93,35 @@ defmodule Plug.Bunyan do
       |> merge_flagged_headers(@header_prefix, conn)
       |> merge_env_vars(@env_vars)
       |> Poison.encode!
+    end
+  end
+
+  @spec filter(binary) :: binary
+  defp filter(value) when is_binary(value), do: value
+
+  @spec filter(map) :: map
+  defp filter(params) when is_map(params) do
+    params
+    |> Stream.map(fn {key, value} -> filter(key, value) end)
+    |> Enum.into(%{})
+  end
+
+  @spec filter(list) :: list
+  defp filter(params) when is_list(params) do
+    params
+    |> Enum.map(fn param -> filter(param) end)
+  end
+
+  @spec filter(binary, binary | map | list) :: {binary, binary | map | list}
+  defp filter(key, value) do
+    value = case Regex.match?(@key_filter, key) do
+      true -> "[FILTERED]"
+         _ -> value
+    end
+
+    case is_binary(value) do
+      true -> {key, value}
+         _ -> {key, filter(value)}
     end
   end
 
