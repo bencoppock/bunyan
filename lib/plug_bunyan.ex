@@ -10,11 +10,11 @@ defmodule Plug.Bunyan do
   controller, action, and format (e.g. HTML or JSON).
 
   To avoid logging sensitive information that's passed in via params, configure
-  which parameters should be filtered, like so:
+  which parameters should be filtered within config.exs, e.g.:
 
   ```
   config :bunyan,
-    filter_keys: ["password", "ssn"]
+    filter_parameters: ["password", "ssn"]
   ```
 
   Parameter filtering is case insensitive and will replace filtered values with
@@ -50,15 +50,14 @@ defmodule Plug.Bunyan do
   """
 
   alias Plug.Conn
+  alias Bunyan.Params
 
   @behaviour Plug
 
   require Logger
 
-  @header_prefix Application.get_env(:bunyan, :header_prefix, "")
-  @env_vars      Application.get_env(:bunyan, :env_vars, [])
-  @filter_keys   Application.get_env(:bunyan, :filter_keys, [])
-  @key_filter    ~r/\A(#{Enum.intersperse(@filter_keys, "|")})\z/i
+  @header_prefix     Application.get_env(:bunyan, :header_prefix, "")
+  @env_vars          Application.get_env(:bunyan, :env_vars, [])
 
   def init(_), do: false
 
@@ -83,7 +82,7 @@ defmodule Plug.Bunyan do
         "method"      => conn.method,
         "timestamp"   => stop |> format_timestamp |> List.to_string,
         "path"        => conn.request_path,
-        "params"      => conn.params |> filter,
+        "params"      => conn.params |> Params.filter,
         "status"      => conn.status |> Integer.to_string,
         "duration"    => duration |> format_duration |> List.to_string,
         "request_id"  => Logger.metadata[:request_id],
@@ -93,35 +92,6 @@ defmodule Plug.Bunyan do
       |> merge_flagged_headers(@header_prefix, conn)
       |> merge_env_vars(@env_vars)
       |> Poison.encode!
-    end
-  end
-
-  @spec filter(binary) :: binary
-  defp filter(value) when is_binary(value), do: value
-
-  @spec filter(map) :: map
-  defp filter(params) when is_map(params) do
-    params
-    |> Stream.map(fn {key, value} -> filter(key, value) end)
-    |> Enum.into(%{})
-  end
-
-  @spec filter(list) :: list
-  defp filter(params) when is_list(params) do
-    params
-    |> Enum.map(fn param -> filter(param) end)
-  end
-
-  @spec filter(binary, binary | map | list) :: {binary, binary | map | list}
-  defp filter(key, value) do
-    value = case Regex.match?(@key_filter, key) do
-      true -> "[FILTERED]"
-         _ -> value
-    end
-
-    case is_binary(value) do
-      true -> {key, value}
-         _ -> {key, filter(value)}
     end
   end
 
@@ -151,11 +121,9 @@ defmodule Plug.Bunyan do
     |> Map.merge(log)
   end
 
-  defp merge_phoenix_attributes(map, _), do: map
+  defp merge_phoenix_attributes(log, _), do: log
 
   @spec merge_env_vars(map, list) :: map
-  defp merge_env_vars(log, []), do: log
-
   defp merge_env_vars(log, env_vars) do
     env_vars
     |> Enum.reduce(%{}, fn({var, key}, m) -> Map.put(m, key, System.get_env(var)) end)

@@ -116,29 +116,11 @@ defmodule Plug.BunyanTest do
     assert log["our_env_var"] == "tranquil"
   end
 
-  test "filters nested params according to the configuration" do
-    params = %{user: %{
-      PaSsword: "pass123",
-      nAme: "Benjamin",
-      things: [
-        %{SsN: %{first_three: "123", next_two: "12", and_the_rest: "1234"}},
-        %{fav_color: "we'll say orange"},
-        "ooh, gnarly list!"
-      ]
-    }}
+  test "filters nested params per the \"filter_keys\" configuration" do
+    params = %{"user" => %{"name" => "Paul Bunyan", "password" => "pass123"}}
     {_conn, message} = conn(:post, "/", params) |> log_with_plug_bunyan
     log = Poison.decode!(message)
 
-    assert log["params"] == %{
-      "user" => %{
-        "PaSsword" => "[FILTERED]",
-        "nAme" => "Benjamin",
-        "things"  => [
-          %{"SsN"    => "[FILTERED]"},
-          %{"fav_color" => "we'll say orange"},
-          "ooh, gnarly list!"
-        ]
-      }
-    }
+    assert log["params"] == %{"user" => %{"name" => "Paul Bunyan", "password" => "[FILTERED]"}}
   end
 end
