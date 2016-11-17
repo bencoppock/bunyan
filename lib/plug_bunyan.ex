@@ -50,7 +50,7 @@ defmodule Plug.Bunyan do
   """
 
   alias Plug.Conn
-  alias Bunyan.Params
+  alias Bunyan.{Params, Timestamp}
 
   @behaviour Plug
 
@@ -80,7 +80,7 @@ defmodule Plug.Bunyan do
       %{
         "level"       => :info,
         "method"      => conn.method,
-        "timestamp"   => stop |> format_timestamp |> List.to_string,
+        "timestamp"   => Timestamp.format_string(stop),
         "path"        => conn.request_path,
         "params"      => conn.params |> Params.filter,
         "status"      => conn.status |> Integer.to_string,
@@ -137,15 +137,5 @@ defmodule Plug.Bunyan do
 
   defp format_duration(duration) do
     [duration |> Integer.to_string, "µs"]
-  end
-
-  @spec format_timestamp({non_neg_integer, non_neg_integer, non_neg_integer}) :: list
-  defp format_timestamp({_,_,micro} = t) do
-    {{year,month,day},{hour,minute,second}} = :calendar.now_to_universal_time(t)
-
-    :io_lib.format(
-      "~4w-~2..0w-~2..0w ~2..0w:~2..0w:~2..0w.~6..0w",
-      [year,month,day,hour,minute,second,micro]
-    )
   end
 end

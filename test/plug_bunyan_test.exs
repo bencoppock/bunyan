@@ -7,7 +7,7 @@ defmodule Plug.BunyanTest do
   import ExUnit.CaptureIO
   require Logger
 
-  @timestamp_format ~r/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}/
+  @timestamp_pattern ~r/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\z/
 
   defmodule TestPlug do
     use Plug.Builder
@@ -45,7 +45,7 @@ defmodule Plug.BunyanTest do
     log = Poison.decode!(message)
 
     assert log["level"] == "info"
-    assert Regex.match? @timestamp_format, log["timestamp"]
+    assert Regex.match? @timestamp_pattern, log["timestamp"]
     assert log["duration"]
     assert log["params"] == %{}
     assert log["path"] == "/the_path"
@@ -65,7 +65,7 @@ defmodule Plug.BunyanTest do
     log = Poison.decode!(message)
 
     assert log["level"] == "info"
-    assert Regex.match?(@timestamp_format, log["timestamp"])
+    assert Regex.match?(@timestamp_pattern, log["timestamp"])
     assert log["duration"]
     assert log["controller"] == "PretendController"
     assert log["action"] == "fake_action"

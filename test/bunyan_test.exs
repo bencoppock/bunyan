@@ -7,7 +7,7 @@ defmodule BunyanTest do
   import ExUnit.CaptureIO
   require Logger
 
-  @timestamp_format ~r/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}/
+  @timestamp_pattern ~r/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\z/
 
   defp log_with_bunyan(message, opts \\ []) do
     data = capture_io(:user, fn ->
@@ -44,7 +44,7 @@ defmodule BunyanTest do
 
     assert log["level"] == "info"
     assert log["logger_name"] == "Bunyan"
-    assert Regex.match? @timestamp_format, log["timestamp"]
+    assert Regex.match? @timestamp_pattern, log["timestamp"]
     assert log["message"] == "my message"
     refute Map.has_key?(log, "request_id")
   end
