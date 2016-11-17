@@ -48,6 +48,7 @@ defmodule Plug.BunyanTest do
     assert Regex.match? @timestamp_pattern, log["timestamp"]
     assert log["duration"]
     assert log["params"] == %{}
+    assert log["host"] == "www.example.com"
     assert log["path"] == "/the_path"
     assert log["method"] == "GET"
     assert log["status"] == "200"

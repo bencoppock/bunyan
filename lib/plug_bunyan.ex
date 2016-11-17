@@ -81,6 +81,7 @@ defmodule Plug.Bunyan do
         "level"       => :info,
         "method"      => conn.method,
         "timestamp"   => Timestamp.format_string(stop),
+        "host"        => conn.host,
         "path"        => conn.request_path,
         "params"      => conn.params |> Params.filter,
         "status"      => conn.status |> Integer.to_string,
