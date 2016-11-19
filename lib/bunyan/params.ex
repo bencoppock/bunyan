@@ -45,9 +45,6 @@ defmodule Bunyan.Params do
     |> Enum.map(&filter/1)
   end
 
-  @spec filter(String.t) :: String.t
-  def filter(value) when is_binary(value), do: value
-
   @spec filter(parameter) :: parameter
   def filter({key, value}) do
     case String.downcase(key) in @filter_parameters do
@@ -55,4 +52,6 @@ defmodule Bunyan.Params do
          _ -> {key, filter(value)}
     end
   end
+
+  def filter(value), do: value
 end

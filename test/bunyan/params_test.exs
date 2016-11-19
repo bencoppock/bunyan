@@ -20,6 +20,7 @@ defmodule Bunyan.ParamsTest do
         "things" => [
           %{"SSN" => %{"first_three" => "123", "next_two" => "12", "and_the_rest" => "1234"}},
           %{"fav_color" => "likely Blue"},
+          %{"fav_number" => 14},
           "ooh, gnarly list!",
           %{"sauce" => "ketchup"},
           %{"secret|sauce" => "mustard"}
@@ -34,6 +35,7 @@ defmodule Bunyan.ParamsTest do
         "things"  => [
           %{"SSN"    => "[FILTERED]"},
           %{"fav_color" => "likely Blue"},
+          %{"fav_number" => 14},
           "ooh, gnarly list!",
           %{"sauce" => "ketchup"},
           %{"secret|sauce" => "[FILTERED]"}
