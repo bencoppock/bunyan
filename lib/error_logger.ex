@@ -3,16 +3,27 @@ defmodule Bunyan.ErrorLogger do
   An error logger.
 
   In your plug pipeline (e.g. router.ex in a phoenix project):
-  * Add `require Logger`
-  * Add `use Plug.ErrorHandler`
-  * Add the following function:
 
-  ```
+  ```elixir
+  require Logger
+  use Plug.ErrorHandler
+
   defp handle_errors(conn, %{kind: _, reason: _, stack: _} = metadata) do
     Bunyan.ErrorLogger.log(conn, metadata)
     send_resp(conn, conn.status, Poison.encode!(%{errors: %{detail: "Internal server error"}}))
   end
   ```
+
+  The following data will be captured, when available:
+  * `level`
+  * `timestamp`
+  * `request_id` (when used in conjuction with `Plug.RequestId`)
+  * `method`
+  * `host`
+  * `path`
+  * `status`
+  * `exception`
+  * `logger_name`
   """
 
   alias Bunyan.Timestamp
@@ -29,7 +40,7 @@ defmodule Bunyan.ErrorLogger do
         "host"        => conn.host,
         "path"        => conn.request_path,
         "status"      => conn.status |> Integer.to_string,
-        "message"     => Exception.format(kind, reason, stacktrace),
+        "exception"   => Exception.format(kind, reason, stacktrace),
         "logger_name" => "Bunyan.ErrorLogger"
       }
       |> Poison.encode!

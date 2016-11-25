@@ -53,7 +53,7 @@ defmodule Bunyan.ErrorLoggerTest do
 
     assert log["level"] == "error"
     assert String.match? log["timestamp"], @timestamp_pattern
-    assert String.match? log["message"], ~r(\A#{Regex.escape("** (Poison.SyntaxError) Unexpected token at position 0: n\n")})
+    assert String.match? log["exception"], ~r(\A#{Regex.escape("** (Poison.SyntaxError) Unexpected token at position 0: n\n")})
     assert log["host"] == "www.example.com"
     assert log["path"] == "/a_path"
     assert log["method"] == "GET"
