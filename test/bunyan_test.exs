@@ -9,9 +9,9 @@ defmodule BunyanTest do
 
   @timestamp_pattern ~r/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}\z/
 
-  defp log_with_bunyan(level, message, metadata \\ []) do
+  defp log_with_bunyan(level, message_or_function, metadata \\ []) do
     data = capture_io(:user, fn ->
-      apply(Bunyan, level, [message, metadata])
+      apply(Bunyan, level, [message_or_function, metadata])
       Logger.flush
     end)
 
@@ -49,6 +49,16 @@ defmodule BunyanTest do
   test "allows \"error\" level" do
     log = log_with_bunyan(:error, "my message") |> Poison.decode!
     assert log["level"] == "error"
+  end
+
+  test "accepts an IO List that evaluates to a message" do
+    log = log_with_bunyan(:info, ["I", ["O ", "Lists"], [" love"]]) |> Poison.decode!
+    assert log["message"] == "IO Lists love"
+  end
+
+  test "accepts a function that evaluates to a message" do
+    log = log_with_bunyan(:info, fn -> "the message" end) |> Poison.decode!
+    assert log["message"] == "the message"
   end
 
   defmodule TestPlug do
