@@ -90,6 +90,6 @@ defmodule Bunyan do
 
   defp merge_request_id(log, nil), do: log
   defp merge_request_id(log, request_id) do
-    Map.merge(log, %{"request_id" => request_id})
+    Map.put(log, :request_id, request_id)
   end
 end

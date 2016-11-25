@@ -6,8 +6,21 @@ defmodule Plug.Bunyan do
   [Elixir Logger](http://elixir-lang.org/docs/stable/logger/Logger.html)
   and automatically generates JSON log messages.
 
-  In the context of a Phoenix app, the generated log message will include
-  controller, action, and format (e.g. HTML or JSON).
+  All requests that are processed by your plug pipeline will log the following
+  fields, when avaiable:
+  * `level`
+  * `timestamp` (UTC)
+  * `request_id` (when used in conjuction with `Plug.RequestId`)
+  * `method`
+  * `host`
+  * `path`
+  * `status`
+  * `logger_name`
+  * `params`
+  * `duration`
+  * `controller` (when used in a Phoenix application)
+  * `action` (when used in a Phoenix application)
+  * `format` (when used in a Phoenix application)
 
   To avoid logging sensitive information passed in via HTTP headers or
   params, configure headers/params to be filtered within config.exs using
@@ -69,9 +82,9 @@ defmodule Plug.Bunyan do
         "path"        => conn.request_path,
         "status"      => conn.status |> Integer.to_string,
         "duration"    => duration |> format_duration |> List.to_string,
-        "request_id"  => Logger.metadata[:request_id],
         "logger_name" => "Plug.Bunyan"
       }
+      |> merge_request_id(Logger.metadata[:request_id])
       |> merge_params(conn)
       |> merge_phoenix_attributes(conn)
       |> merge_headers(conn)
@@ -122,5 +135,10 @@ defmodule Plug.Bunyan do
   end
   defp format_duration(duration) do
     [duration |> Integer.to_string, "µs"]
+  end
+
+  defp merge_request_id(log, nil), do: log
+  defp merge_request_id(log, request_id) do
+    Map.put(log, :request_id, request_id)
   end
 end
