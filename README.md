@@ -61,20 +61,23 @@
 
     ```elixir
     defmodule YourApp.Web do
-      …
+      ...
+
       def controller do
         quote do
-          …
+          ...
+
           require Plug.Bunyan
           plug Plug.Bunyan
         end
       end
-      …
+
+      ...
     end
     ```
 
   That's it. Now all requests that are processed by your plug pipeline will
-  log the following fields, when avaiable:
+  log the following fields:
 
   * `level`
   * `timestamp` (UTC)
@@ -118,7 +121,7 @@
   end
   ```
 
-  The following data will be captured, when available:
+  The following data will be captured:
 
   * `level`
   * `timestamp`
@@ -130,9 +133,22 @@
   * `logger_name`
   * `exception`
 
-## Usage
+## Manual Usage
 
-  To manually log
+  To manually log, call the `Bunyan` module with your log level of choice, e.g.:
+
+  ```elixir
+  Bunyan.warn("something seems amiss")
+  Bunyan.info(fn -> "a potentially expensive function" end)
+  ```
+
+  The log will contain the following fields:
+
+  * `level`
+  * `timestamp`
+  * `logger_name`
+  * `message`
+  * `request_id` (when used in conjuction with `Plug.RequestId`)
 
 ## Contributing
 
