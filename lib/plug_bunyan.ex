@@ -1,6 +1,6 @@
 defmodule Plug.Bunyan do
   @moduledoc """
-  A plug for logging JSON.
+  A plug for logging JSON messages.
 
   This [Plug](https://github.com/elixir-lang/plug) wraps the standard
   [Elixir Logger](http://elixir-lang.org/docs/stable/logger/Logger.html)
@@ -9,8 +9,9 @@ defmodule Plug.Bunyan do
   In the context of a Phoenix app, the generated log message will include
   controller, action, and format (e.g. HTML or JSON).
 
-  To avoid logging sensitive information that's passed in via params, configure
-  which parameters should be filtered within config.exs, e.g.:
+  To avoid logging sensitive information passed in via HTTP headers or
+  params, configure headers/params to be filtered within config.exs using
+  the `filter_paramaters` key, e.g.:
 
   ```
   config :bunyan,
@@ -20,8 +21,9 @@ defmodule Plug.Bunyan do
   Parameter filtering is case insensitive and will replace filtered values with
   the string `"[FILTERED]"`.
 
-  To log environment variables, add configuration by providing a list of tuples
-  which specify environment variables to log along with the desired output names.
+  If you wish to log any environment variables with `Plug.Bunyan`, provide
+  Bunyan config with a list of environment variables to log along with your
+  desired output names.
 
   For example:
   ```
@@ -30,23 +32,6 @@ defmodule Plug.Bunyan do
   ```
 
   ...will output the value of `CUSTOM_ENV_VAR` under a JSON key of `"our_env_var"`
-
-  HTTP headers with a given prefix can be logged. To do so, add configuration
-  by providing a desired header prefix to watch for. The prefix will be removed
-  and hyphens will be replaced by underscores when logged.
-
-  For example:
-  ```
-  config :bunyan,
-    header_prefix: "x-some-prefix-"
-  ```
-
-  This example config would include any headers that begin with "x-some-prefix-"
-  (case insensitive). Therefore, `"x-some-prefix-custom-header=17"` would be
-  logged as `{"custom_header": "17"}`
-
-  If used in conjunction with (and after) Plug.RequestId, this plug will log the
-  x-request-id header as "request_id".
   """
 
   alias Plug.Conn
@@ -56,8 +41,7 @@ defmodule Plug.Bunyan do
 
   require Logger
 
-  @header_prefix     Application.get_env(:bunyan, :header_prefix, "")
-  @env_vars          Application.get_env(:bunyan, :env_vars, [])
+  @env_vars Application.get_env(:bunyan, :env_vars, [])
 
   def init(_), do: false
 
@@ -83,31 +67,33 @@ defmodule Plug.Bunyan do
         "timestamp"   => Timestamp.format_string(stop),
         "host"        => conn.host,
         "path"        => conn.request_path,
-        "params"      => conn.params |> Params.filter,
         "status"      => conn.status |> Integer.to_string,
         "duration"    => duration |> format_duration |> List.to_string,
         "request_id"  => Logger.metadata[:request_id],
         "logger_name" => "Plug.Bunyan"
       }
+      |> merge_params(conn)
       |> merge_phoenix_attributes(conn)
-      |> merge_flagged_headers(@header_prefix, conn)
-      |> merge_env_vars(@env_vars)
+      |> merge_headers(conn)
+      |> merge_env_vars
       |> Poison.encode!
     end
   end
 
-  @spec merge_flagged_headers(map, binary, Plug.Conn.t) :: map
-  defp merge_flagged_headers(log, "", _), do: log
+  @spec merge_params(map, Plug.Conn.t) :: map
+  defp merge_params(log, %{params: params}) when params == %{}, do: log
+  defp merge_params(log, %{params: params}) do
+    Map.put(log, :params, Params.filter(params))
+  end
 
-  defp merge_flagged_headers(log, prefix, %{req_headers: request_headers}) do
-    pattern = ~r/^#{Regex.escape(prefix)}/i
-
-    request_headers
-    |> Stream.filter(fn {header,_} -> Regex.match?(pattern, header) end)
-    |> Stream.map(fn {hdr, val} -> {String.trim_leading(hdr, prefix), val} end)
-    |> Stream.map(fn {hdr, val} -> {String.replace(hdr, "-", "_"), val} end)
+  @spec merge_headers(map, Plug.Conn.t) :: map
+  defp merge_headers(log, %{req_headers: headers}) when headers == %{}, do: log
+  defp merge_headers(log, %{req_headers: headers}) do
+    request_headers = headers
     |> Enum.into(%{})
-    |> Map.merge(log)
+    |> Params.filter
+
+    Map.put(log, :headers, request_headers)
   end
 
   @spec merge_phoenix_attributes(map, Plug.Conn.t) :: map
@@ -118,24 +104,22 @@ defmodule Plug.Bunyan do
       phoenix_format: format
     }
   }) do
-    %{"controller" => controller, "action" => action, "format" => format}
-    |> Map.merge(log)
+    Map.merge(log, %{"controller" => controller, "action" => action, "format" => format})
   end
-
   defp merge_phoenix_attributes(log, _), do: log
 
-  @spec merge_env_vars(map, list) :: map
-  defp merge_env_vars(log, env_vars) do
-    env_vars
-    |> Enum.reduce(%{}, fn({var, key}, m) -> Map.put(m, key, System.get_env(var)) end)
-    |> Map.merge(log)
+  @spec merge_env_vars(map) :: map
+  defp merge_env_vars(log) do
+    vars = Enum.reduce(@env_vars, %{}, fn({env_var, output_name}, m) ->
+      Map.put(m, output_name, System.get_env(env_var))
+    end)
+    Map.put(log, :env_vars, vars)
   end
 
-  @spec format_duration(non_neg_integer) :: list
+  @spec format_duration(non_neg_integer) :: IO.chardata
   defp format_duration(duration) when duration > 1000 do
     [duration |> div(1000) |> Integer.to_string, "ms"]
   end
-
   defp format_duration(duration) do
     [duration |> Integer.to_string, "µs"]
   end

@@ -39,7 +39,7 @@
     ```
 
   2. In your config, set the Elixir logger to only output the message, and
-    specify which HTTP parameters to filter out, e.g.:
+    specify which HTTP headers and parameters to filter out, e.g.:
 
     ```elixir
     config :logger, :console,
@@ -103,24 +103,7 @@
   ```
 
   ...will output the value of `CUSTOM_ENV_VAR` under a JSON key of `"our_env_var"`
-<!--
-  HTTP headers with a given prefix can be logged. To do so, add configuration
-  by providing a desired header prefix to watch for. The prefix will be removed
-  and hyphens will be replaced by underscores when logged.
 
-  For example:
-  ```
-  config :bunyan,
-    header_prefix: "x-some-prefix-"
-  ```
-
-  This example config would include any headers that begin with "x-some-prefix-"
-  (case insensitive). Therefore, `"x-some-prefix-custom-header=17"` would be
-  logged as `{"custom_header": "17"}`
-
-  If used in conjunction with (and after) Plug.RequestId, this plug will log the
-  x-request-id header as "request_id".
- -->
 ### Error Logging
 
   In your plug pipeline (e.g. router.ex in a phoenix project):

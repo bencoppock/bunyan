@@ -8,5 +8,4 @@ config :logger, :console,
 
 config :bunyan,
   env_vars: [{"CUSTOM_ENV_VAR", "our_env_var"}],
-  header_prefix: "x-some-prefix-",
-  filter_parameters: ["passWORD", "SSN", "secret|sauce"]
+  filter_parameters: ["passWORD", "SSN", "secret|sauce", "api-token"]
