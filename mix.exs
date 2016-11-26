@@ -31,7 +31,8 @@ defmodule Bunyan.Mixfile do
       {:plug,        "~> 1.0"},
       {:credo,       "~> 0.4", only: [:dev, :test]},
       {:dialyxir,    "~> 0.4", only: [:dev]},
-      {:excoveralls, "~> 0.5", only: :test}
+      {:excoveralls, "~> 0.5", only: :test},
+      {:ex_doc,      "~> 0.14",only: :dev}
     ]
   end
 

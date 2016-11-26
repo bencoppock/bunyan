@@ -2,11 +2,10 @@ defmodule Bunyan do
   @moduledoc """
   A JSON logger.
 
-  This module wraps the standard
-  [Elixir Logger](http://elixir-lang.org/docs/stable/logger/Logger.html)
-  and enables log messages to be generated in JSON format.
+  This module wraps the standard Elixir `Logger` and enables log messages to be
+  generated in JSON format.
 
-  If used after Plug.RequestId, the output will contain the connection's
+  If used after `Plug.RequestId`, the output will contain the connection's
   request_id.
   """
 
