@@ -1,6 +1,8 @@
 # Bunyan
 
   A JSON logger for Elixir.
+  
+  **_Note: this version of bunyan is now defunct. @pragdave separately wrote an [Elixir logging library named bunyan](https://github.com/bunyan-logger/), which is almost surely the one you're looking for!_**
 
   ![Paul Bunyan the Logger](/paul_bunyan.png?raw=true)
 
